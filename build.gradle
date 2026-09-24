@@ -83,8 +83,8 @@ publishing {
                     developer {
                         name = 'Anders Eknert'
                         email = 'anders@eknert.com'
-                        organization = 'Styra'
-                        organizationUrl = 'https://www.styra.com'
+                        organization = 'OPA'
+                        organizationUrl = 'https://www.openpolicyagent.org'
                     }
                     developer {
                         name = 'Jakub Scholz'
