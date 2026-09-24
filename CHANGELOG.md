@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.5.1] - 2023-03-09
 
-- Move construction of request builder to `AllowCallable` `call` method to avoid it being shared between threads [#47](https://github.com/StyraInc/opa-kafka-plugin/pull/47) ([@xhl1988](https://github.com/@xhl1988))
+- Move construction of request builder to `AllowCallable` `call` method to avoid it being shared between threads [#47](https://github.com/open-policy-agent/opa-kafka-plugin/pull/47) ([@xhl1988](https://github.com/@xhl1988))
 
 ## [1.5.0] - 2022-10-10
 

@@ -188,4 +188,4 @@ The plugin exposes some metrics that can be useful in operation.
 
 ## Community
 
-For questions, discussions and announcements related to Styra products, services and open source projects, please join the Styra community on [Slack](https://communityinviter.com/apps/styracommunity/signup)!
+For questions, discussions and announcements related to OPA, please join the OPA community on [Slack](https://slack.openpolicyagent.org)!
