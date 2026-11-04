@@ -3,10 +3,13 @@ package org.openpolicyagent.kafka
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 
-import java.net.{InetAddress, URI}
+import com.sun.net.httpserver.HttpServer
+
+import java.net.{InetAddress, InetSocketAddress, URI}
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import java.nio.charset.StandardCharsets
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 import com.typesafe.scalalogging.LazyLogging
@@ -175,6 +178,32 @@ class OpaAuthorizerSpec extends AnyFlatSpec with Matchers with PrivateMethodTest
     opaAuthorizer.getCache.estimatedSize() should be (0)
   }
 
+  "OpaAuthorizer" should "treat non-200 responses from OPA as errors" in {
+    val server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress, 0), 0)
+    server.createContext("/", exchange => {
+      val body = """{"code":"internal_error","message":"eval_conflict_error"}""".getBytes(StandardCharsets.UTF_8)
+      exchange.sendResponseHeaders(500, body.length)
+      exchange.getResponseBody.write(body)
+      exchange.close()
+    })
+    server.start()
+
+    try {
+      val url = s"http://localhost:${server.getAddress.getPort}/v1/data/kafka/authz/allow"
+      val request = createRequest("alice-consumer", List(createAction("alice-topic", AclOperation.READ)))
+
+      val failClosed = setupAuthorizer(url)
+      failClosed.authorize(request.requestContext, request.actions.asJava) should be (List(AuthorizationResult.DENIED).asJava)
+      failClosed.getCache.estimatedSize() should be (0)
+
+      val failOpen = setupAuthorizer(url, allowOnError = true)
+      failOpen.authorize(request.requestContext, request.actions.asJava) should be (List(AuthorizationResult.ALLOWED).asJava)
+      failOpen.getCache.estimatedSize() should be (0)
+    } finally {
+      server.stop(0)
+    }
+  }
+
   "OpaAuthorizer" should "authorize super users without checking with OPA" in {
     val opaAuthorizer = setupAuthorizer(opaUrl)
 
@@ -291,11 +320,11 @@ class OpaAuthorizerSpec extends AnyFlatSpec with Matchers with PrivateMethodTest
   }
 
 
-  def setupAuthorizer(url: String = opaUrl, metricsEnabled: Boolean = false): OpaAuthorizer = {
+  def setupAuthorizer(url: String = opaUrl, metricsEnabled: Boolean = false, allowOnError: Boolean = false): OpaAuthorizer = {
     val opaAuthorizer = new OpaAuthorizer()
     val config = new java.util.HashMap[String, String]
     config.put("opa.authorizer.url", url)
-    config.put("opa.authorizer.allow.on.error", "false")
+    config.put("opa.authorizer.allow.on.error", allowOnError.toString)
     config.put("super.users", "User:CN=my-user;User:CN=my-user2,O=my-org")
     if(metricsEnabled) {
       config.put("opa.authorizer.metrics.enabled", "true")

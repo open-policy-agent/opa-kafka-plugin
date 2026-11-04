@@ -347,6 +347,10 @@ class AllowCallable(
     val resp = AllowCallable.client.send(req, BodyHandlers.ofString)
     logger.trace(s"Response code: ${resp.statusCode}, body: ${resp.body}")
 
+    if (resp.statusCode != 200) {
+      throw new IOException(s"Unexpected response code from OPA: ${resp.statusCode}, body: ${resp.body}")
+    }
+
     AllowCallable.objectMapper.readTree(resp.body()).at("/result").asBoolean
   }
 }
